@@ -1,6 +1,7 @@
 package com.example.vall.geotask;
 
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.View;
@@ -26,10 +27,13 @@ public class MyActivity extends ActionBarActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        Resources r = getResources();
         if (isGoogleServicesOk()) {
             mButton.setEnabled(true);
+            mButton.setText(r.getText(R.string.splash_screen_button_text));
         } else {
             mButton.setEnabled(false);
+            mButton.setText(r.getText(R.string.google_play_services_missing_text));
         }
 
     }
