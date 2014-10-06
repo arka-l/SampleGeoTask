@@ -4,5 +4,9 @@
     <string name="app_name">GeoTask</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="title_section1">Откуда</string>
+    <string name="title_section2">Куда</string>
+    <string name="splash_screen_button_text"><b>Далее</b></string>
+    <string name="title_activity_maps">Map</string>
 
 </resources>
