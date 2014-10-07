@@ -9,4 +9,7 @@
     <string name="google_play_services_missing_text"><b>Для продолжения установите Google Play Services</b></string>
     <string name="title_activity_maps">Map</string>
 
+    <string name="from_text">От:</string>
+    <string name="to_text">До:</string>
+
 </resources>

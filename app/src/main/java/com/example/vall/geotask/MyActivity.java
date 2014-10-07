@@ -28,6 +28,12 @@ public class MyActivity extends ActionBarActivity {
     protected void onStart() {
         super.onStart();
         Resources r = getResources();
+
+
+        /**
+         * Проверка на доступность службы Google Service
+         * При недоступности вызываем встроенный диалог
+         */
         if (isGoogleServicesOk()) {
             mButton.setEnabled(true);
             mButton.setText(r.getText(R.string.splash_screen_button_text));
