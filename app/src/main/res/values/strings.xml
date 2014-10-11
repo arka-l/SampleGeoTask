@@ -7,7 +7,11 @@
     <string name="title_section2">Куда</string>
     <string name="splash_screen_button_text"><b>Далее</b></string>
     <string name="google_play_services_missing_text"><b>Для продолжения установите Google Play Services</b></string>
-    <string name="title_activity_maps">Map</string>
+    <string name="search_box_hint">Поиск</string>
+    <string name="google_services_error_text">Произошла ошибка. Повторите попытку</string>
+    <string name="http_error_text">Проверьте соединение с интернетом</string>
+
+
 
     <string name="from_text">От:</string>
     <string name="to_text">До:</string>

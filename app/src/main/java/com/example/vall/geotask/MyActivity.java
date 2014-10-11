@@ -1,12 +1,15 @@
 package com.example.vall.geotask;
 
+import android.app.Activity;
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -14,14 +17,19 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 
 public class MyActivity extends ActionBarActivity {
 
-    private static final int REQUEST_CODE = 1;
     Button mButton;
+
+    public final static int
+            CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);
         mButton = (Button) findViewById(R.id.main_activity_button);
+
+
     }
 
     @Override
@@ -34,7 +42,7 @@ public class MyActivity extends ActionBarActivity {
          * Проверка на доступность службы Google Service
          * При недоступности вызываем встроенный диалог
          */
-        if (isGoogleServicesOk()) {
+        if (servicesConnected()) {
             mButton.setEnabled(true);
             mButton.setText(r.getText(R.string.splash_screen_button_text));
         } else {
@@ -49,40 +57,68 @@ public class MyActivity extends ActionBarActivity {
         startActivity(intent);
     }
 
-    private boolean isGoogleServicesOk() {
-        int flag = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
-        switch (flag) {
-            case (ConnectionResult.SUCCESS): {
-                return true;
-            }
-            case (ConnectionResult.SERVICE_MISSING): {
 
-            }
+    public static class ErrorDialogFragment extends DialogFragment {
 
-            case (ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED): {
+        private Dialog mDialog;
 
-            }
-
-            case (ConnectionResult.SERVICE_DISABLED): {
-
-            }
+        public ErrorDialogFragment() {
+            super();
+            mDialog = null;
         }
-        Toast.makeText(this, "" + flag, Toast.LENGTH_SHORT).show();
-        GooglePlayServicesUtil.getErrorDialog(flag, this, REQUEST_CODE);
-        return false;
+
+        public void setDialog(Dialog dialog) {
+            mDialog = dialog;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            return mDialog;
+        }
     }
 
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//
-//        switch (requestCode) {
-//            case(REQUEST_CODE):{
-//                if (resultCode== Activity.RESULT_OK){
-//
-//                }
-//            }
-//        }
-//    }
+
+    @Override
+    protected void onActivityResult(
+            int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case CONNECTION_FAILURE_RESOLUTION_REQUEST:
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+//                        servicesConnected();
+                        break;
+                }
+        }
+    }
+
+    private boolean servicesConnected() {
+        int resultCode =
+                GooglePlayServicesUtil.
+                        isGooglePlayServicesAvailable(this);
+
+        if (ConnectionResult.SUCCESS == resultCode) {
+            Log.d("Location Updates",
+                    "Google Play services is available.");
+            return true;
+
+        } else {
+
+            Dialog errorDialog = GooglePlayServicesUtil.getErrorDialog(
+                    resultCode,
+                    this,
+                    CONNECTION_FAILURE_RESOLUTION_REQUEST);
+
+            if (errorDialog != null) {
+                ErrorDialogFragment errorFragment =
+                        new ErrorDialogFragment();
+                errorFragment.setDialog(errorDialog);
+                errorFragment.show(getSupportFragmentManager(),
+                        "Location Updates");
+            }
+        }
+
+        return false;
+    }
 
 
     //

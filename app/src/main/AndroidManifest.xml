@@ -24,10 +24,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.vall.geotask.MyActivity" />
         </activity>
-        <activity
-            android:name=".MapsActivity"
-            android:label="@string/title_activity_maps" >
-        </activity>
 
         <meta-data
             android:name="com.google.android.gms.version"
