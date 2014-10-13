@@ -9,4 +9,7 @@
 
     <dimen name="rect_stroke_dimension">2dp</dimen>
 
+    <dimen name="rect_radius_dimension">4dp</dimen>
+
+
 </resources>

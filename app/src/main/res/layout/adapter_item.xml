@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-
-<com.example.vall.geotask.CustomTextView xmlns:android="http://schemas.android.com/apk/res/android"
+<TextView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/search_suggestion_item"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="@dimen/margin_normal"
     android:textSize="@dimen/search_text_size"
-    android:background="@color/black_transparency_20"
+    android:background="@drawable/search_items_background"
     android:textColor="@color/black_transparency_FF"
     android:lines="2"
     android:gravity="center_vertical"/>
