@@ -10,10 +10,8 @@
     <string name="search_box_hint">Поиск</string>
     <string name="google_services_error_text">Произошла ошибка. Повторите попытку</string>
     <string name="http_error_text">Проверьте соединение с интернетом</string>
-
-
-
     <string name="from_text">От:</string>
     <string name="to_text">До:</string>
+    <string name="title_activity_sample">Map</string>
 
 </resources>
