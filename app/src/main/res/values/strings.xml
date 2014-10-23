@@ -13,5 +13,7 @@
     <string name="from_text">От:</string>
     <string name="to_text">До:</string>
     <string name="title_activity_sample">Map</string>
+    <string name="search_button_text">Поиск пути</string>
+    <string name="title_activity_result">Map</string>
 
 </resources>

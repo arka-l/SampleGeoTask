@@ -1,6 +1,7 @@
 package com.example.vall.geotask;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -32,6 +33,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -76,7 +78,7 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
 
     private static final String BUNDLE_KEY_ADAPTER_ITEM_HEIGHT = "BUNDLE_KEY_ADAPTER_ITEM_HEIGHT";
     private static final String BUNDLE_KEY_IF_SCROLLBAR_FADING_ENABLED = "BUNDLE_KEY_IF_SCROLLBAR_FADING_ENABLED";
-    private static final String BUNDLE_KEY_IF_EDIT_TEXT_HAS_FOCUS = "BUNDLE_KEY_IF_EDIT_TEXT_HAS";
+    private static final String BUNDLE_KEY_COORDS_TO_SHOW = "BUNDLE_KEY_COORDS_TO_SHOW";
 
 
     // Update frequency in seconds
@@ -140,6 +142,8 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
     private EditText mEditText;
     private ImageView mImageView;
     private ListView mListView;
+    private Button mSearchButton;
+
     //	private Resources mResources;
     private SharedPreferences mPrefs;
     private SharedPreferences.Editor mEditor;
@@ -169,9 +173,9 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
         googleMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
             @Override
             public void onCameraChange(CameraPosition cameraPosition) {
-                mEditText.clearFocus();
+//                mEditText.clearFocus();
 
-                if (cameraPosition.bearing!=0){
+                if (cameraPosition.bearing != 0) {
 
                 }
             }
@@ -209,7 +213,6 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
         });
 
 
-
         if (position == 0) {
             mMapFrom = googleMap;
         } else if (position == 1) {
@@ -241,7 +244,7 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
 //        mEditText.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);    //Отмена suggestions
 
 
-        mImageView = (ImageView)findViewById(R.id.icon_cancel);
+        mImageView = (ImageView) findViewById(R.id.icon_cancel);
         final View iconCancel = findViewById(R.id.icon_cancel);
         ViewTreeObserver vto = iconCancel.getViewTreeObserver();
         vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -282,6 +285,8 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
         mListView.setScrollbarFadingEnabled(ifScrollbarFadingEnabled);
 
         mPager = (ViewPager) findViewById(R.id.pager);
+        mSearchButton = (Button)findViewById(R.id.search_button);
+
         mActionBar = getSupportActionBar();
 
         Resources resources = getResources();
@@ -327,7 +332,7 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
                 @Override
                 public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
                     int position = tab.getPosition();
-                    mPager.setCurrentItem(position, false);
+                    mPager.setCurrentItem(position, true);
 
                     String textToSet = "";
                     switch (position) {
@@ -346,6 +351,11 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
                     }
                     mEditText.setText(textToSet);
 
+                    if (mAdapter != null) {
+                        //Удаляем текущую подборку адресов
+                        mAdapter.clear();
+                        mAdapter.notifyDataSetChanged();
+                    }
                 }
 
                 @Override
@@ -387,11 +397,38 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
                     if (hasFocus) {
                         isNeedToSearch = true;
                         mListView.setVisibility(View.VISIBLE);
-                        mImageView.setVisibility(View.VISIBLE);
+
+                        Address curAddress = null;
+                        GoogleMap curMap = null;
+                        final int curPage = mPager.getCurrentItem();
+                        switch (curPage) {
+                            case 0: {
+                                if (mAddressFrom != null) {
+                                    curAddress = mAddressFrom;
+                                    curMap = mMapFrom;
+                                }
+                                break;
+                            }
+                            case 1: {
+                                if (mAddressTo != null) {
+                                    curAddress = mAddressTo;
+                                    curMap = mMapTo;
+                                }
+                                break;
+                            }
+                        }
+
+                        if (curAddress != null) {
+                            //Определяем текущие выбранные координаты
+                            LatLng location = new LatLng(curAddress.getLatitude(), curAddress.getLongitude());
+                            //Двигаем камеру к данной метке
+                            CameraPosition cameraPosition = new CameraPosition.Builder()
+                                    .target(location).zoom(8).build();
+                            curMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                        }
 
                     } else {
                         mListView.setVisibility(View.INVISIBLE);
-                        mImageView.setVisibility(View.INVISIBLE);
                         isNeedToSearch = false;
                     }
                 }
@@ -413,7 +450,13 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
             @Override
             public void afterTextChanged(Editable s) {
                 mTextToFind = s.toString().trim();
-                if (isNeedToSearch) {
+                if (!mTextToFind.equals("")) {
+                    mImageView.setVisibility(View.VISIBLE);
+                } else {
+                    mImageView.setVisibility(View.INVISIBLE);
+                }
+
+                if (isNeedToSearch && mEditText.isFocused()) {
                     if (mCountDownTimer == null) {
                         mCountDownTimer = new CountDownTimer(EDIT_TEXT_FILTRATION, EDIT_TEXT_FILTRATION) {
                             @Override
@@ -543,6 +586,11 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
         }
         mCurrentLocation = mLocationClient.getLastLocation();
 
+        if (mAddressTo!=null && mAddressFrom!=null && mCurrentLocation!=null){
+            RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) mSearchButton.getLayoutParams();
+            params.addRule(RelativeLayout.ALIGN_BOTTOM,0);
+        }
+
 //        if (mMapFrom != null && mCurrentLocation != null) {
 //            mMapFrom.addMarker(new MarkerOptions().position(new LatLng(mCurrentLocation.getLatitude(),
 //                    mCurrentLocation.getLongitude())).title("onConnected"));
@@ -565,7 +613,7 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
      */
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
-		/*
+        /*
 		 * Стандартные подход от Google:
 		 * Google Play services can resolve some errors it detects.
          * If the error has a resolution, try sending an Intent to
@@ -615,6 +663,15 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
         clearAddress(mPager.getCurrentItem());
     }
 
+    public void onButtonClick(View v){
+        Intent intent = new Intent(this, ResultActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putDoubleArray(BUNDLE_KEY_COORDS_TO_SHOW, new double[]{mAddressFrom.getLatitude(),mAddressFrom.getLongitude()
+                ,mAddressTo.getLatitude(),mAddressTo.getLongitude(),mCurrentLocation.getLatitude()
+                    ,mCurrentLocation.getLongitude()});
+        intent.putExtras(bundle);
+        startActivity(intent);
+    }
 
     private void setAddress(int addressPosition) {
 
@@ -636,6 +693,12 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
                     break;
                 }
             }
+
+            if (mAddressTo!=null && mAddressFrom!=null && mCurrentLocation!=null){
+                RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) mSearchButton.getLayoutParams();
+                params.addRule(RelativeLayout.ALIGN_BOTTOM,0);
+            }
+
             mEditText.setText(curAddress.toString());
             //Стираем предыдущие метки, если они есть
             curMap.clear();
@@ -690,6 +753,9 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
                 break;
             }
         }
+
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) mSearchButton.getLayoutParams();
+        params.addRule(RelativeLayout.ALIGN_BOTTOM,R.id.search_layout);
 
         /**
          * Убираем клавиатуру
@@ -1152,12 +1218,12 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            View viewGroup = super.onCreateView(inflater, container, savedInstanceState);
+            View curView = super.onCreateView(inflater, container, savedInstanceState);
             GoogleMap googleMap = this.getMap();
             int position = this.getArguments().getInt(POSITION_KEY);
 
-            View zoomControls = viewGroup.findViewById(ZOOM_CONTROLS_ID);
-            View locationButton = viewGroup.findViewById(LOCATION_BUTTON_ID);
+            View zoomControls = curView.findViewById(ZOOM_CONTROLS_ID);
+            View locationButton = curView.findViewById(LOCATION_BUTTON_ID);
 
             if (locationButton != null && locationButton.getLayoutParams() instanceof RelativeLayout.LayoutParams &&
                     zoomControls != null && zoomControls.getLayoutParams() instanceof RelativeLayout.LayoutParams) {
@@ -1189,7 +1255,27 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
 			 */
             ((DirectionActivity) getActivity()).setGoogleMap(position, googleMap);
 
-            return viewGroup;
+//            int leftPadding = curView.getPaddingLeft();
+//            int rightPadding = curView.getPaddingRight();
+//            int topPadding = curView.getPaddingTop();
+//            int bottomPadding = curView.getPaddingBottom();
+//
+//            Resources r = getResources();
+//            int margin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, r.getDimension(R.dimen.margin_small),
+//                    getResources().getDisplayMetrics());
+//            switch (position) {
+//                case (0): {
+//                    rightPadding = margin;
+//                    break;
+//                }
+//                case (1): {
+//                    leftPadding = margin;
+//                    break;
+//                }
+//            }
+//            curView.
+//            curView.setPadding(leftPadding,topPadding,rightPadding,bottomPadding);
+            return curView;
         }
     }
 }
