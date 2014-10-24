@@ -78,7 +78,7 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
 
     private static final String BUNDLE_KEY_ADAPTER_ITEM_HEIGHT = "BUNDLE_KEY_ADAPTER_ITEM_HEIGHT";
     private static final String BUNDLE_KEY_IF_SCROLLBAR_FADING_ENABLED = "BUNDLE_KEY_IF_SCROLLBAR_FADING_ENABLED";
-    private static final String BUNDLE_KEY_COORDS_TO_SHOW = "BUNDLE_KEY_COORDS_TO_SHOW";
+    static final String BUNDLE_KEY_COORDS_TO_SHOW = "BUNDLE_KEY_COORDS_TO_SHOW";
 
 
     // Update frequency in seconds
@@ -93,7 +93,7 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
     private static final int FASTEST_INTERVAL_IN_SECONDS = 1;
     // A fast frequency ceiling in milliseconds
     private static final long FASTEST_INTERVAL = MILLISECONDS_PER_SECOND * FASTEST_INTERVAL_IN_SECONDS;
-    LocationRequest mLocationRequest;
+    private LocationRequest mLocationRequest;
     //ViewPager для реализации вкладок
     private ViewPager mPager;
     //Количество адресов в выпадающем списке
@@ -586,11 +586,6 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
         }
         mCurrentLocation = mLocationClient.getLastLocation();
 
-        if (mAddressTo!=null && mAddressFrom!=null && mCurrentLocation!=null){
-            RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) mSearchButton.getLayoutParams();
-            params.addRule(RelativeLayout.ALIGN_BOTTOM,0);
-        }
-
 //        if (mMapFrom != null && mCurrentLocation != null) {
 //            mMapFrom.addMarker(new MarkerOptions().position(new LatLng(mCurrentLocation.getLatitude(),
 //                    mCurrentLocation.getLongitude())).title("onConnected"));
@@ -667,8 +662,7 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
         Intent intent = new Intent(this, ResultActivity.class);
         Bundle bundle = new Bundle();
         bundle.putDoubleArray(BUNDLE_KEY_COORDS_TO_SHOW, new double[]{mAddressFrom.getLatitude(),mAddressFrom.getLongitude()
-                ,mAddressTo.getLatitude(),mAddressTo.getLongitude(),mCurrentLocation.getLatitude()
-                    ,mCurrentLocation.getLongitude()});
+                ,mAddressTo.getLatitude(),mAddressTo.getLongitude()});
         intent.putExtras(bundle);
         startActivity(intent);
     }
@@ -694,7 +688,7 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
                 }
             }
 
-            if (mAddressTo!=null && mAddressFrom!=null && mCurrentLocation!=null){
+            if (mAddressTo!=null && mAddressFrom!=null){
                 RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) mSearchButton.getLayoutParams();
                 params.addRule(RelativeLayout.ALIGN_BOTTOM,0);
             }
