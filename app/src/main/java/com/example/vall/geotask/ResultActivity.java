@@ -1,25 +1,28 @@
 package com.example.vall.geotask;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.IntentSender;
 import android.content.res.Resources;
-import android.location.Address;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.AsyncTask;
-import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.util.TypedValue;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -44,6 +47,7 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
     private Toast mToastToShow;
     private LatLng mLocationFrom;
     private LatLng mLocationTo;
+    private LatLng mCurLocation;
 
     //Текущий AsyncTask
     GetDirectionsTask mGetDirectionsTask;
@@ -63,6 +67,7 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
         double[] coords =  getIntent().getExtras().getDoubleArray(DirectionActivity.BUNDLE_KEY_COORDS_TO_SHOW);
         mLocationFrom = new LatLng(coords[0],coords[1]);
         mLocationTo = new LatLng(coords[2],coords[3]);
+        mCurLocation = new LatLng(coords[4],coords[5]);
 
         setUpMapIfNeeded();
     }
@@ -124,6 +129,7 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
     @Override
     public void onConnected(Bundle bundle) {
         mCurrentLocation = mLocationClient.getLastLocation();
+        mCurLocation = new LatLng(mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude());
     }
 
     @Override
@@ -204,7 +210,7 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
                 mToastToShow.show();
             }
             if (directionCoords!=null){
-                Log.e(TAG_LOG,""+directionCoords.size());
+                drawPath(directionCoords);
             } else {
                 Toast.makeText(mContext,"null",Toast.LENGTH_SHORT).show();
             }
@@ -229,7 +235,6 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
             String googleMapUrl = "http://maps.googleapis.com/maps/api/directions/json?origin=" +
                     coords[0] + "," + coords[1] + "&destination="+ coords[2] + "," +
                     coords[3] + "&sensor=false";
-            Log.e(TAG_LOG,googleMapUrl);
             URL url = null;
             try {
                 url = new URL(googleMapUrl);
@@ -275,11 +280,10 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
                                 LatLng loc = new LatLng(lat,lng);
                                 directCoords = new ArrayList<LatLng>();
                                 directCoords.add(loc);
-                                Log.e(TAG_LOG,legs.length()+"");
                                 for (int i = 0; i < legs.length(); i++){
                                     JSONArray steps = legs.getJSONObject(i).getJSONArray("steps");
                                     for (int j = 0; j < steps.length(); j++){
-                                        nextLocation = steps.getJSONObject(i).getJSONObject("end_location");
+                                        nextLocation = steps.getJSONObject(j).getJSONObject("end_location");
                                         lat = nextLocation.getDouble("lat");
                                         lng = nextLocation.getDouble("lng");
                                         loc = new LatLng(lat,lng);
@@ -325,5 +329,45 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
             asyncTaskResult[0] = directCoords;
             return asyncTaskResult;
         }
+    }
+
+    private void drawPath(List<LatLng> directionCoords) {
+        final int lineWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2,
+                getResources().getDisplayMetrics());
+        Polyline line = mMap.addPolyline(new PolylineOptions().addAll(directionCoords)
+                .width(lineWidth).color(Color.BLACK));
+
+        /**
+         * Рассчитываем границы, к которым необходимо подвинуть экран. Для этого находим самую
+         * северо-восточную точку и юго-западную
+         */
+        double northLimit = directionCoords.get(0).latitude;
+        double eastLimit = directionCoords.get(0).longitude;
+        double southLimit = directionCoords.get(0).latitude;
+        double westLimit = directionCoords.get(0).longitude;
+
+        List<LatLng> tempCoords = directionCoords;
+        tempCoords.add(mCurLocation);
+        for (LatLng point : tempCoords) {
+            if (northLimit<point.latitude)
+                northLimit = point.latitude;
+            if (southLimit>point.latitude)
+                southLimit = point.latitude;
+            if (eastLimit<point.longitude)
+                eastLimit = point.longitude;
+            if (westLimit>point.longitude)
+                westLimit = point.longitude;
+        }
+
+        Log.e(TAG_LOG,""+northLimit);
+        Log.e(TAG_LOG,""+southLimit);
+        Log.e(TAG_LOG,""+eastLimit);
+        Log.e(TAG_LOG,""+westLimit);
+        LatLng northEastPoint = new LatLng(northLimit,eastLimit);
+        LatLng southWestPoint = new LatLng(southLimit,westLimit);
+        LatLngBounds cameraPosBounds = new LatLngBounds(
+                southWestPoint, northEastPoint);
+        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(cameraPosBounds, 0));
+
     }
 }

@@ -662,7 +662,8 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
         Intent intent = new Intent(this, ResultActivity.class);
         Bundle bundle = new Bundle();
         bundle.putDoubleArray(BUNDLE_KEY_COORDS_TO_SHOW, new double[]{mAddressFrom.getLatitude(),mAddressFrom.getLongitude()
-                ,mAddressTo.getLatitude(),mAddressTo.getLongitude()});
+                ,mAddressTo.getLatitude(),mAddressTo.getLongitude()
+                ,mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude()});
         intent.putExtras(bundle);
         startActivity(intent);
     }
