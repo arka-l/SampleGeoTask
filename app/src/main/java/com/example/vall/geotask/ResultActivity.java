@@ -16,6 +16,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -67,7 +68,8 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
         double[] coords =  getIntent().getExtras().getDoubleArray(DirectionActivity.BUNDLE_KEY_COORDS_TO_SHOW);
         mLocationFrom = new LatLng(coords[0],coords[1]);
         mLocationTo = new LatLng(coords[2],coords[3]);
-        mCurLocation = new LatLng(coords[4],coords[5]);
+
+//        mCurLocation = new LatLng(coords[4],coords[5]);
 
         setUpMapIfNeeded();
     }
@@ -129,7 +131,10 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
     @Override
     public void onConnected(Bundle bundle) {
         mCurrentLocation = mLocationClient.getLastLocation();
-        mCurLocation = new LatLng(mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude());
+        if (mCurrentLocation!=null) {
+            mCurLocation = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+        }
+
     }
 
     @Override
@@ -272,27 +277,35 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
 
                         if (googleMapResponse.has("routes")){
                             JSONArray routes = googleMapResponse.getJSONArray("routes");
-                            if (routes.getJSONObject(0).has("legs")){
-                                JSONArray legs = routes.getJSONObject(0).getJSONArray("legs");
-                                JSONObject nextLocation = legs.getJSONObject(0).getJSONObject("start_location");
-                                double lat = nextLocation.getDouble("lat");
-                                double lng = nextLocation.getDouble("lng");
-                                LatLng loc = new LatLng(lat,lng);
-                                directCoords = new ArrayList<LatLng>();
-                                directCoords.add(loc);
-                                for (int i = 0; i < legs.length(); i++){
-                                    JSONArray steps = legs.getJSONObject(i).getJSONArray("steps");
-                                    for (int j = 0; j < steps.length(); j++){
-                                        nextLocation = steps.getJSONObject(j).getJSONObject("end_location");
-                                        lat = nextLocation.getDouble("lat");
-                                        lng = nextLocation.getDouble("lng");
-                                        loc = new LatLng(lat,lng);
-                                        directCoords.add(loc);
-                                    }
-                                }
+                            if (routes.getJSONObject(0).has("overview_polyline")){
+                                JSONObject pointPolyline = routes.getJSONObject(0).getJSONObject("overview_polyline");
+                                directCoords = decodePoly(pointPolyline.getString("points"));
                                 asyncTaskResult[0] = directCoords;
                                 return asyncTaskResult;
                             }
+
+
+//                            if (routes.getJSONObject(0).has("legs")){
+//                                JSONArray legs = routes.getJSONObject(0).getJSONArray("legs");
+//                                JSONObject nextLocation = legs.getJSONObject(0).getJSONObject("start_location");
+//                                double lat = nextLocation.getDouble("lat");
+//                                double lng = nextLocation.getDouble("lng");
+//                                LatLng loc = new LatLng(lat,lng);
+//                                directCoords = new ArrayList<LatLng>();
+//                                directCoords.add(loc);
+//                                for (int i = 0; i < legs.length(); i++){
+//                                    JSONArray steps = legs.getJSONObject(i).getJSONArray("steps");
+//                                    for (int j = 0; j < steps.length(); j++){
+//                                        nextLocation = steps.getJSONObject(j).getJSONObject("end_location");
+//                                        lat = nextLocation.getDouble("lat");
+//                                        lng = nextLocation.getDouble("lng");
+//                                        loc = new LatLng(lat,lng);
+//                                        directCoords.add(loc);
+//                                    }
+//                                }
+//                                asyncTaskResult[0] = directCoords;
+//                                return asyncTaskResult;
+//                            }
                         }
 
 
@@ -331,8 +344,40 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
         }
     }
 
+
+    private List<LatLng> decodePoly(String encoded) {
+        List<LatLng> poly = new ArrayList<LatLng>();
+        int index = 0, len = encoded.length();
+        double lat = .0, lng = .0;
+
+        while (index < len) {
+            int b, shift = 0, result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            double dlat = ((double)((result & 1) != 0 ? ~(result >> 1) : (result >> 1)))/1E5;
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            double dlng = ((double)((result & 1) != 0 ? ~(result >> 1) : (result >> 1)))/1E5;
+            lng += dlng;
+            LatLng p = new LatLng(lat,lng);
+            poly.add(p);
+        }
+        return poly;
+    }
+
+
     private void drawPath(List<LatLng> directionCoords) {
-        final int lineWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2,
+        final int lineWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4,
                 getResources().getDisplayMetrics());
         Polyline line = mMap.addPolyline(new PolylineOptions().addAll(directionCoords)
                 .width(lineWidth).color(Color.BLACK));
@@ -347,7 +392,9 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
         double westLimit = directionCoords.get(0).longitude;
 
         List<LatLng> tempCoords = directionCoords;
-        tempCoords.add(mCurLocation);
+//        if (mCurLocation!=null) {
+//            tempCoords.add(mCurLocation);
+//        }
         for (LatLng point : tempCoords) {
             if (northLimit<point.latitude)
                 northLimit = point.latitude;
@@ -359,15 +406,12 @@ public class ResultActivity extends FragmentActivity implements GooglePlayServic
                 westLimit = point.longitude;
         }
 
-        Log.e(TAG_LOG,""+northLimit);
-        Log.e(TAG_LOG,""+southLimit);
-        Log.e(TAG_LOG,""+eastLimit);
-        Log.e(TAG_LOG,""+westLimit);
         LatLng northEastPoint = new LatLng(northLimit,eastLimit);
         LatLng southWestPoint = new LatLng(southLimit,westLimit);
         LatLngBounds cameraPosBounds = new LatLngBounds(
                 southWestPoint, northEastPoint);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(cameraPosBounds, 0));
-
+        final int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20,
+                getResources().getDisplayMetrics());
+        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(cameraPosBounds, padding));
     }
 }

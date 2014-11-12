@@ -47,12 +47,10 @@ import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.CameraPositionCreator;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -662,8 +660,7 @@ public class DirectionActivity extends ActionBarActivity implements GooglePlaySe
         Intent intent = new Intent(this, ResultActivity.class);
         Bundle bundle = new Bundle();
         bundle.putDoubleArray(BUNDLE_KEY_COORDS_TO_SHOW, new double[]{mAddressFrom.getLatitude(),mAddressFrom.getLongitude()
-                ,mAddressTo.getLatitude(),mAddressTo.getLongitude()
-                ,mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude()});
+                ,mAddressTo.getLatitude(),mAddressTo.getLongitude()});
         intent.putExtras(bundle);
         startActivity(intent);
     }
